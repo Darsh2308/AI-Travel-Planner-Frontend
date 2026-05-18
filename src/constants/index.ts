@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:5000/api/v1';
+export const API_BASE_URL = 'https://ai-travel-planner-backend-zma9.onrender.com/api/v1';
 
 export const API_ENDPOINTS = {
   // Auth
@@ -10,10 +10,13 @@ export const API_ENDPOINTS = {
 
   // Users
   USER_PROFILE: '/users/profile',
+  USER_PREFERENCES: '/users/profile/preferences',
 
   // Budget
   BUDGET: '/budget',
   BUDGET_LEDGER: '/budget/ledger',
+  BUDGET_ALLOCATE: '/budget/allocate',
+  BUDGET_RELEASE: '/budget/release',
 
   // Trips
   TRIPS: '/trips',
@@ -35,6 +38,12 @@ export const API_ENDPOINTS = {
   TRIP_ACTIVITIES: (tripId: string) => `/trips/${tripId}/activities`,
   TRIP_ACTIVITY: (tripId: string, activityId: string) =>
     `/trips/${tripId}/activities/${activityId}`,
+
+  // AI Generation
+  AI_GENERATE_TRIP: '/ai/trips/generate',
+
+  // Analytics
+  ANALYTICS: '/analytics',
 
   // AI Assistant
   ASSISTANT_OPTIMIZE: '/assistant/optimize-trip',
@@ -68,16 +77,14 @@ export const ACTIVITY_CATEGORIES = [
 ] as const;
 
 export const TRAVEL_STYLES = [
-  'Backpacker',
-  'Budget-Friendly',
-  'Comfort',
-  'Luxury',
-  'Adventure',
-  'Cultural',
-  'Romantic',
-  'Family',
-  'Solo',
-  'Group',
+  'adventure',
+  'cultural',
+  'relaxation',
+  'family',
+  'business',
+  'backpacker',
+  'luxury',
+  'eco',
 ] as const;
 
 export const INTERESTS = [

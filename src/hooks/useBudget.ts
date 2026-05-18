@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { budgetApi } from '@/api/budget';
-import type { Budget } from '@/types';
+import type { BudgetLedger, UpdateBudgetPayload } from '@/types';
 import { toast } from 'sonner';
 
 export function useBudget() {
@@ -19,12 +19,12 @@ export function useBudget() {
   });
 
   const updateBudgetMutation = useMutation({
-    mutationFn: (payload: Partial<Budget>) => budgetApi.updateBudget(payload),
+    mutationFn: (payload: UpdateBudgetPayload) => budgetApi.updateBudget(payload),
     onMutate: async (newBudget) => {
       await queryClient.cancelQueries({ queryKey: ['budget'] });
-      const previous = queryClient.getQueryData<Budget>(['budget']);
-      queryClient.setQueryData<Budget>(['budget'], (old) =>
-        old ? { ...old, ...newBudget } : old
+      const previous = queryClient.getQueryData<BudgetLedger>(['budget']);
+      queryClient.setQueryData<BudgetLedger>(['budget'], (old) =>
+        old ? { ...old, totalBudget: newBudget.total, currency: newBudget.currency } : old
       );
       return { previous };
     },

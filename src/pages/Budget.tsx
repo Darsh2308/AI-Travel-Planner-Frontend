@@ -24,18 +24,13 @@ export default function Budget() {
     { label: 'Remaining', value: formatCurrency(budget?.remainingBudget || 0), icon: DollarSign, color: 'text-success-500', bg: 'bg-success-50 dark:bg-success-500/10' },
   ];
 
-  const pieData = budget?.categories?.map((c, i) => ({
-    name: c.name, value: c.allocated, color: categoryColors[i % categoryColors.length] || '#64748b',
-  })) || [];
-
-  const barData = budget?.categories?.map((c) => ({
-    name: c.name, allocated: c.allocated, spent: c.spent,
-  })) || [];
+  const pieData: Array<{ name: string; value: number; color: string }> = [];
+  const barData: Array<{ name: string; allocated: number; spent: number }> = [];
 
   const handleSaveBudget = async () => {
     const val = parseFloat(newBudget);
     if (isNaN(val) || val < 100) { toast.error('Minimum budget is $100'); return; }
-    await updateBudget({ totalBudget: val });
+    await updateBudget({ currency: budget?.currency || 'USD', total: val });
     setEditing(false);
   };
 
@@ -134,24 +129,24 @@ export default function Budget() {
         <h3 className="mb-4 font-semibold text-foreground">Transaction Ledger</h3>
         {ledger.length > 0 ? (
           <div className="space-y-3">
-            {ledger.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between rounded-xl border border-border/50 p-4">
+            {ledger.map((entry, idx) => (
+              <div key={idx} className="flex items-center justify-between rounded-xl border border-border/50 p-4">
                 <div className="flex items-center gap-3">
                   <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg',
-                    entry.type === 'credit' ? 'bg-success-50 dark:bg-success-500/10' :
-                    entry.type === 'debit' ? 'bg-danger-50 dark:bg-danger-500/10' : 'bg-brand-500/10')}>
-                    {entry.type === 'credit' ? <ArrowDownRight className="h-4 w-4 text-success-500" /> :
-                     entry.type === 'debit' ? <ArrowUpRight className="h-4 w-4 text-danger-500" /> :
-                     <DollarSign className="h-4 w-4 text-brand-500" />}
+                    entry.type === 'release' ? 'bg-success-50 dark:bg-success-500/10' :
+                    entry.type === 'allocation' ? 'bg-brand-500/10' : 'bg-muted')}>
+                    {entry.type === 'release' ? <ArrowDownRight className="h-4 w-4 text-success-500" /> :
+                     entry.type === 'allocation' ? <ArrowUpRight className="h-4 w-4 text-brand-500" /> :
+                     <DollarSign className="h-4 w-4 text-muted-foreground" />}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">{entry.description}</p>
-                    <p className="text-xs text-muted-foreground">{entry.category} · {formatRelativeTime(entry.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground">{entry.type} · {formatRelativeTime(entry.createdAt)}</p>
                   </div>
                 </div>
                 <span className={cn('text-sm font-semibold',
-                  entry.type === 'credit' ? 'text-success-500' : entry.type === 'debit' ? 'text-danger-500' : 'text-foreground')}>
-                  {entry.type === 'credit' ? '+' : '-'}{formatCurrency(entry.amount)}
+                  entry.type === 'release' ? 'text-success-500' : entry.type === 'allocation' ? 'text-brand-500' : 'text-foreground')}>
+                  {formatCurrency(entry.amount)}
                 </span>
               </div>
             ))}

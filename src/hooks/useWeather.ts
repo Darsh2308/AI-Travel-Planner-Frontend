@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { weatherApi } from '@/api/weather';
+import type { WeatherReview } from '@/types';
 import { toast } from 'sonner';
 
 export function useWeather(tripId: string) {
@@ -13,25 +14,32 @@ export function useWeather(tripId: string) {
   });
 
   const reviewWeatherMutation = useMutation({
-    mutationFn: (payload: { approved: boolean; notes?: string }) =>
-      weatherApi.reviewWeather(tripId, { tripId, ...payload }),
+    mutationFn: (payload: WeatherReview) => weatherApi.reviewWeather(tripId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weather', tripId] });
+      queryClient.invalidateQueries({ queryKey: ['trips', tripId] });
       toast.success('Weather review submitted');
+    },
+    onError: (error: { message: string }) => {
+      toast.error('Failed to submit weather review', { description: error.message });
     },
   });
 
   const regenerateDayMutation = useMutation({
-    mutationFn: (date: string) => weatherApi.regenerateWeatherDay(tripId, { date }),
+    mutationFn: (affectedDay: number) =>
+      weatherApi.regenerateWeatherDay(tripId, { affectedDay }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weather', tripId] });
       queryClient.invalidateQueries({ queryKey: ['trips', tripId] });
       toast.success('Day plan regenerated for weather');
     },
+    onError: (error: { message: string }) => {
+      toast.error('Failed to regenerate day', { description: error.message });
+    },
   });
 
   return {
-    weather: weatherQuery.data ?? [],
+    weather: weatherQuery.data,
     isLoading: weatherQuery.isLoading,
     reviewWeather: reviewWeatherMutation.mutate,
     regenerateDay: regenerateDayMutation.mutate,

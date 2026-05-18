@@ -10,7 +10,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
 
-  if (isLoading) {
+  // Only show loader when we have a token and are validating it server-side
+  if (isLoading && !!localStorage.getItem('accessToken')) {
     return <FullScreenLoader />;
   }
 

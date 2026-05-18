@@ -15,6 +15,13 @@ import { cn } from '@/lib/utils';
 
 const stepLabels = ['Destination', 'Preferences', 'Review', 'Creating'];
 
+function computeTotalDays(startDate: string, endDate: string): number {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(1, diff + 1);
+}
+
 export default function TripCreate() {
   const navigate = useNavigate();
   const { createTrip, isCreating } = useTrips();
@@ -24,7 +31,7 @@ export default function TripCreate() {
   const [generatingPhase, setGeneratingPhase] = useState(0);
 
   const form1 = useForm<TripStep1Values>({ resolver: zodResolver(tripStep1Schema), defaultValues: { travelers: 1 } });
-  const form2 = useForm<TripStep2Values>({ resolver: zodResolver(tripStep2Schema), defaultValues: { budgetTier: 'mid-range', interests: [], foodPreferences: [] } });
+  const form2 = useForm<TripStep2Values>({ resolver: zodResolver(tripStep2Schema), defaultValues: { budgetTier: 'standard', interests: [], foodPreferences: [] } });
 
   const onStep1 = (data: TripStep1Values) => { setStep1Data(data); setStep(1); };
   const onStep2 = (data: TripStep2Values) => { setStep2Data(data); setStep(2); };
@@ -38,8 +45,17 @@ export default function TripCreate() {
       await new Promise((r) => setTimeout(r, 1500));
     }
     try {
-      const trip = await createTrip({ ...step1Data, ...step2Data, mobilityPreferences: step2Data.mobilityPreferences || '' });
-      navigate(`/trips/${trip.id}`);
+      const totalDays = computeTotalDays(step1Data.startDate, step1Data.endDate);
+      const trip = await createTrip({
+        destinationCity: step1Data.destinationCity,
+        destinationCountry: step1Data.destinationCountry,
+        startDate: step1Data.startDate,
+        endDate: step1Data.endDate,
+        totalDays,
+        budgetTier: step2Data.budgetTier,
+        generateWithAi: true,
+      });
+      navigate(`/trips/${trip._id ?? trip.id}`);
     } catch {
       setStep(2);
     }
@@ -75,14 +91,14 @@ export default function TripCreate() {
             <form onSubmit={form1.handleSubmit(onStep1)} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Destination</label>
-                  <input {...form1.register('destination')} placeholder="e.g., Paris" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
-                  {form1.formState.errors.destination && <p className="mt-1 text-xs text-danger-500">{form1.formState.errors.destination.message}</p>}
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Destination City</label>
+                  <input {...form1.register('destinationCity')} placeholder="e.g., Paris" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                  {form1.formState.errors.destinationCity && <p className="mt-1 text-xs text-danger-500">{form1.formState.errors.destinationCity.message}</p>}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Country</label>
-                  <input {...form1.register('country')} placeholder="e.g., France" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
-                  {form1.formState.errors.country && <p className="mt-1 text-xs text-danger-500">{form1.formState.errors.country.message}</p>}
+                  <input {...form1.register('destinationCountry')} placeholder="e.g., France" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                  {form1.formState.errors.destinationCountry && <p className="mt-1 text-xs text-danger-500">{form1.formState.errors.destinationCountry.message}</p>}
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -118,8 +134,8 @@ export default function TripCreate() {
             <form onSubmit={form2.handleSubmit(onStep2)} className="space-y-5">
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">Budget Tier</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(['budget', 'mid-range', 'luxury'] as const).map((tier) => (
+                <div className="grid grid-cols-4 gap-3">
+                  {(['budget', 'standard', 'premium', 'luxury'] as const).map((tier) => (
                     <label key={tier} className={cn('cursor-pointer rounded-xl border-2 p-3 text-center text-sm font-medium transition-all',
                       form2.watch('budgetTier') === tier ? 'border-brand-500 bg-brand-500/10 text-brand-500' : 'border-border text-muted-foreground hover:border-brand-500/30')}>
                       <input type="radio" value={tier} {...form2.register('budgetTier')} className="hidden" />
@@ -131,10 +147,18 @@ export default function TripCreate() {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">Travel Style</label>
-                <select {...form2.register('travelStyle')} className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none">
-                  <option value="">Select style...</option>
-                  {TRAVEL_STYLES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <div className="flex flex-wrap gap-2">
+                  {TRAVEL_STYLES.map((style) => {
+                    const selected = form2.watch('travelStyle') === style;
+                    return (
+                      <button key={style} type="button" onClick={() => form2.setValue('travelStyle', selected ? '' : style)}
+                        className={cn('rounded-full px-3 py-1.5 text-xs font-medium transition-all',
+                          selected ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-brand-500/10 hover:text-brand-500')}>
+                        {style}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">Interests</label>
@@ -194,8 +218,9 @@ export default function TripCreate() {
             <div className="space-y-4 rounded-xl bg-muted/50 p-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  { label: 'Destination', value: `${step1Data.destination}, ${step1Data.country}` },
+                  { label: 'Destination', value: `${step1Data.destinationCity}, ${step1Data.destinationCountry}` },
                   { label: 'Dates', value: `${step1Data.startDate} → ${step1Data.endDate}` },
+                  { label: 'Total Days', value: computeTotalDays(step1Data.startDate, step1Data.endDate).toString() },
                   { label: 'Travelers', value: step1Data.travelers.toString() },
                   { label: 'Budget Tier', value: step2Data.budgetTier },
                   { label: 'Travel Style', value: step2Data.travelStyle },

@@ -1,46 +1,76 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { activitiesApi } from '@/api/activities';
-import type { Activity } from '@/types';
+import { tripsApi } from '@/api/trips';
+import type { Activity, DayPlan, Trip } from '@/types';
 import { toast } from 'sonner';
 
 export function useActivities(tripId: string) {
   const queryClient = useQueryClient();
 
+  const patchItinerary = async (updater: (itinerary: DayPlan[]) => DayPlan[]) => {
+    const cached = queryClient.getQueryData<Trip>(['trips', tripId]);
+    const itinerary = cached?.itinerary ?? [];
+    return tripsApi.updateTrip(tripId, { itinerary: updater(itinerary) as Trip['itinerary'] });
+  };
+
   const createActivityMutation = useMutation({
-    mutationFn: (payload: Partial<Activity>) =>
-      activitiesApi.createActivity(tripId, payload),
+    mutationFn: ({ dayNumber, payload }: { dayNumber: number; payload: Partial<Activity> }) =>
+      patchItinerary((itinerary) =>
+        itinerary.map((day) =>
+          day.dayNumber === dayNumber
+            ? { ...day, activities: [...(day.activities ?? []), payload as Activity] }
+            : day,
+        ),
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips', tripId] });
       toast.success('Activity added');
     },
-    onError: (error: { message: string }) => {
-      toast.error('Failed to add activity', { description: error.message });
-    },
+    onError: () => toast.error('Failed to add activity'),
   });
 
   const updateActivityMutation = useMutation({
-    mutationFn: ({ activityId, payload }: { activityId: string; payload: Partial<Activity> }) =>
-      activitiesApi.updateActivity(tripId, activityId, payload),
+    mutationFn: ({ dayNumber, activityId, payload }: { dayNumber: number; activityId: string; payload: Partial<Activity> }) =>
+      patchItinerary((itinerary) =>
+        itinerary.map((day) =>
+          day.dayNumber === dayNumber
+            ? {
+                ...day,
+                activities: day.activities.map((a) =>
+                  a._id === activityId ? { ...a, ...payload } : a,
+                ),
+              }
+            : day,
+        ),
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips', tripId] });
       toast.success('Activity updated');
     },
+    onError: () => toast.error('Failed to update activity'),
   });
 
   const deleteActivityMutation = useMutation({
-    mutationFn: (activityId: string) =>
-      activitiesApi.deleteActivity(tripId, activityId),
+    mutationFn: ({ dayNumber, activityId }: { dayNumber: number; activityId: string }) =>
+      patchItinerary((itinerary) =>
+        itinerary.map((day) =>
+          day.dayNumber === dayNumber
+            ? { ...day, activities: day.activities.filter((a) => a._id !== activityId) }
+            : day,
+        ),
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips', tripId] });
       toast.success('Activity removed');
     },
+    onError: () => toast.error('Failed to remove activity'),
   });
 
   return {
     createActivity: createActivityMutation.mutateAsync,
     updateActivity: updateActivityMutation.mutateAsync,
-    deleteActivity: deleteActivityMutation.mutate,
+    deleteActivity: deleteActivityMutation.mutateAsync,
     isCreating: createActivityMutation.isPending,
     isUpdating: updateActivityMutation.isPending,
+    isDeleting: deleteActivityMutation.isPending,
   };
 }

@@ -19,28 +19,24 @@ export default function Profile() {
   const { register, handleSubmit, formState: { errors }, watch, setValue, getValues } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || '',
+      name: user?.fullName || '',
       email: user?.email || '',
       travelStyle: user?.preferences?.travelStyle || '',
       dietaryPreferences: user?.preferences?.dietaryPreferences || [],
-      activityLevel: user?.preferences?.activityLevel || 'moderate',
-      interests: user?.preferences?.interests || [],
+      activityLevel: 'moderate',
+      interests: user?.preferences?.activityPreferences || [],
     },
   });
 
   const onSubmit = async (data: ProfileFormValues) => {
     setSaving(true);
     try {
-      const updated = await usersApi.updateProfile({
-        name: data.name,
-        email: data.email,
-        preferences: {
-          travelStyle: data.travelStyle as 'budget' | 'comfort' | 'luxury' | 'adventure' | undefined,
-          dietaryPreferences: data.dietaryPreferences,
-          activityLevel: data.activityLevel,
-          interests: data.interests,
-        },
+      await usersApi.updatePreferences({
+        travelStyle: data.travelStyle,
+        dietaryPreferences: data.dietaryPreferences,
+        activityPreferences: data.interests,
       });
+      const updated = await usersApi.updateProfile({ fullName: data.name });
       setUser(updated);
       toast.success('Profile updated');
     } catch {
@@ -65,14 +61,14 @@ export default function Profile() {
           <div className="flex items-center gap-4 mb-6">
             <div className="relative">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500 text-xl font-bold text-white">
-                {user ? getInitials(user.name) : 'U'}
+                {user ? getInitials(user.fullName) : 'U'}
               </div>
               <button type="button" className="absolute -bottom-1 -right-1 rounded-full bg-background p-1 shadow-md border border-border">
                 <Camera className="h-3 w-3 text-muted-foreground" />
               </button>
             </div>
             <div>
-              <p className="font-medium text-foreground">{user?.name}</p>
+              <p className="font-medium text-foreground">{user?.fullName}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
@@ -84,8 +80,7 @@ export default function Profile() {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-              <input {...register('email')} className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
-              {errors.email && <p className="mt-1 text-xs text-danger-500">{errors.email.message}</p>}
+              <input {...register('email')} disabled className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground" />
             </div>
           </div>
         </motion.div>
@@ -99,7 +94,7 @@ export default function Profile() {
               <label className="mb-2 block text-sm font-medium text-foreground">Travel Style</label>
               <select {...register('travelStyle')} className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none">
                 <option value="">Select...</option>
-                {TRAVEL_STYLES.map((s) => <option key={s} value={s}>{s}</option>)}
+                {TRAVEL_STYLES.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
               </select>
             </div>
             <div>

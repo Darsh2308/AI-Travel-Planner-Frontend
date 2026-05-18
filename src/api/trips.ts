@@ -5,22 +5,26 @@ import type { Trip, CreateTripPayload } from '@/types';
 export const tripsApi = {
   getTrips: async (): Promise<Trip[]> => {
     const { data } = await api.get(API_ENDPOINTS.TRIPS);
-    return data.data || data;
+    const inner = data.data ?? data;
+    return inner.trips ?? inner;
   },
 
   getTrip: async (tripId: string): Promise<Trip> => {
     const { data } = await api.get(API_ENDPOINTS.TRIP_DETAIL(tripId));
-    return data.data || data;
+    const inner = data.data ?? data;
+    return inner.trip ?? inner;
   },
 
   createTrip: async (payload: CreateTripPayload): Promise<Trip> => {
     const { data } = await api.post(API_ENDPOINTS.TRIPS, payload);
-    return data.data || data;
+    const inner = data.data ?? data;
+    return inner.trip ?? inner;
   },
 
   updateTrip: async (tripId: string, payload: Partial<Trip>): Promise<Trip> => {
     const { data } = await api.patch(API_ENDPOINTS.TRIP_DETAIL(tripId), payload);
-    return data.data || data;
+    const inner = data.data ?? data;
+    return inner.trip ?? inner;
   },
 
   deleteTrip: async (tripId: string): Promise<void> => {

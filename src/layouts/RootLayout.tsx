@@ -225,10 +225,10 @@ export default function RootLayout() {
                 className="flex items-center gap-2 rounded-xl p-1.5 transition-all hover:bg-muted"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-xs font-semibold text-white">
-                  {user ? getInitials(user.name) : <User className="h-4 w-4" />}
+                  {user ? getInitials(user.fullName) : <User className="h-4 w-4" />}
                 </div>
                 <div className="hidden text-left md:block">
-                  <p className="text-sm font-medium text-foreground">{user?.name || 'User'}</p>
+                  <p className="text-sm font-medium text-foreground">{user?.fullName || 'User'}</p>
                 </div>
                 <ChevronDown className="hidden h-4 w-4 text-muted-foreground md:block" />
               </button>
@@ -248,7 +248,7 @@ export default function RootLayout() {
                       className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-popover p-1.5 shadow-elevated"
                     >
                       <div className="border-b border-border px-3 py-2.5 mb-1.5">
-                        <p className="text-sm font-medium text-foreground">{user?.name}</p>
+                        <p className="text-sm font-medium text-foreground">{user?.fullName}</p>
                         <p className="text-xs text-muted-foreground">{user?.email}</p>
                       </div>
                       <NavLink

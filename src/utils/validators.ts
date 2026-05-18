@@ -19,15 +19,15 @@ export const registerSchema = z
   });
 
 export const tripStep1Schema = z.object({
-  destination: z.string().min(2, 'Destination is required'),
-  country: z.string().min(2, 'Country is required'),
+  destinationCity: z.string().min(2, 'Destination is required'),
+  destinationCountry: z.string().min(2, 'Country is required'),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   travelers: z.number().min(1, 'At least 1 traveler required').max(20),
 });
 
 export const tripStep2Schema = z.object({
-  budgetTier: z.enum(['budget', 'mid-range', 'luxury']),
+  budgetTier: z.enum(['budget', 'standard', 'premium', 'luxury']),
   travelStyle: z.string().min(1, 'Please select a travel style'),
   interests: z.array(z.string()).min(1, 'Select at least one interest'),
   foodPreferences: z.array(z.string()),

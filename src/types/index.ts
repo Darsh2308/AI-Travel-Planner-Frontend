@@ -1,21 +1,27 @@
 // ===== Auth Types =====
 export interface User {
   id: string;
-  name: string;
+  _id?: string;
+  fullName: string;
   email: string;
-  avatar?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  avatarUrl?: string;
+  isEmailVerified?: boolean;
   preferences?: UserPreferences;
+  budgetLedger?: BudgetLedger;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface UserPreferences {
-  travelStyle?: 'budget' | 'comfort' | 'luxury' | 'adventure';
+  travelStyle?: 'adventure' | 'cultural' | 'relaxation' | 'family' | 'business' | 'backpacker' | 'luxury' | 'eco' | '';
+  hotelTier?: 'budget' | 'standard' | 'premium' | 'luxury' | '';
+  preferredCurrency?: string;
   dietaryPreferences?: string[];
-  activityLevel?: 'low' | 'moderate' | 'high';
-  interests?: string[];
-  mobilityNeeds?: string;
-  theme?: 'light' | 'dark' | 'system';
+  activityPreferences?: string[];
+  avoidActivities?: string[];
 }
 
 export interface LoginPayload {
@@ -24,10 +30,9 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  name: string;
+  fullName: string;
   email: string;
   password: string;
-  confirmPassword: string;
 }
 
 export interface AuthResponse {
@@ -37,94 +42,108 @@ export interface AuthResponse {
 }
 
 // ===== Budget Types =====
-export interface Budget {
-  id: string;
-  userId: string;
+export interface BudgetLedger {
   totalBudget: number;
   allocatedBudget: number;
   spentBudget: number;
   remainingBudget: number;
   currency: string;
-  categories: BudgetCategory[];
+  entries?: LedgerEntry[];
 }
 
-export interface BudgetCategory {
-  name: string;
-  allocated: number;
-  spent: number;
-  color: string;
-}
+// Legacy alias kept for hook compatibility
+export type Budget = BudgetLedger;
 
 export interface LedgerEntry {
-  id: string;
-  type: 'credit' | 'debit' | 'allocation';
+  type: 'allocation' | 'release' | 'update';
   amount: number;
   description: string;
-  category: string;
-  tripId?: string;
-  tripName?: string;
   createdAt: string;
+}
+
+export interface UpdateBudgetPayload {
+  currency: string;
+  total: number;
+}
+
+export interface BudgetAllocationPayload {
+  amount: number;
+  description: string;
 }
 
 // ===== Trip Types =====
 export type TripStatus =
-  | 'created'
-  | 'ai_generated'
-  | 'weather_checked'
-  | 'hotels_ready'
-  | 'activities_ready'
-  | 'user_confirmed'
-  | 'optimized'
-  | 'active'
+  | 'draft'
+  | 'planned'
+  | 'weather_review_pending'
+  | 'booked'
   | 'completed'
   | 'cancelled';
 
+export type BudgetTier = 'budget' | 'standard' | 'premium' | 'luxury';
+
 export interface Trip {
   id: string;
-  userId: string;
-  destination: string;
-  country: string;
-  startDate: string;
-  endDate: string;
-  travelers: number;
-  status: TripStatus;
-  budgetTier: 'budget' | 'mid-range' | 'luxury';
-  travelStyle: string;
-  interests: string[];
-  foodPreferences: string[];
-  mobilityPreferences: string;
-  totalBudget: number;
-  spentBudget: number;
-  itinerary: DayItinerary[];
-  score?: TripScore;
-  coverImage?: string;
+  _id?: string;
+  owner: string;
+  title: string;
+  destinationCity: string;
+  destinationCountry?: string;
+  latitude?: number;
+  longitude?: number;
+  startDate?: string;
+  endDate?: string;
+  totalDays: number;
+  budgetTier: BudgetTier;
+  allocatedBudgetAmount?: number;
+  estimatedCost?: EstimatedCost;
+  tripStatus: TripStatus;
+  itinerary: DayPlan[];
+  hotelRecommendations: HotelRecommendation[];
+  decisionCheckpoints: DecisionCheckpoint[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface DayItinerary {
-  day: number;
-  date: string;
-  title: string;
-  activities: Activity[];
-  weather?: DayWeather;
+export interface EstimatedCost {
+  flights: number;
+  accommodation: number;
+  food: number;
+  activities: number;
+  localTransport: number;
+  contingency: number;
+  total: number;
 }
 
+export interface DayPlan {
+  dayNumber: number;
+  title?: string;
+  summary?: string;
+  dayStatus?: 'draft' | 'planned' | 'confirmed' | 'completed';
+  activities: Activity[];
+  weatherSnapshot?: WeatherSnapshot;
+}
+
+// Legacy alias
+export type DayItinerary = DayPlan;
+
 export interface Activity {
-  id: string;
-  name: string;
-  description: string;
-  time: string;
-  duration: string;
-  location: string;
-  category: ActivityCategory;
-  cost: number;
-  currency: string;
-  bookingUrl?: string;
-  bookingStatus?: 'not_booked' | 'pending' | 'confirmed' | 'cancelled';
+  _id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  locationName?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  estimatedCost: number;
+  startTime?: string;
+  endTime?: string;
+  bookingRequired?: boolean;
   rating?: number;
-  imageUrl?: string;
+  reviewCount?: number;
   notes?: string;
+  bookingOptions?: BookingOption[];
 }
 
 export type ActivityCategory =
@@ -140,46 +159,46 @@ export type ActivityCategory =
   | 'nature';
 
 export interface CreateTripPayload {
-  destination: string;
-  country: string;
-  startDate: string;
-  endDate: string;
-  travelers: number;
-  budgetTier: string;
-  travelStyle: string;
-  interests: string[];
-  foodPreferences: string[];
-  mobilityPreferences: string;
+  destinationCity: string;
+  destinationCountry?: string;
+  totalDays: number;
+  budgetTier: BudgetTier;
+  startDate?: string;
+  endDate?: string;
+  allocatedBudgetAmount?: number;
+  title?: string;
+  generateWithAi?: boolean;
 }
 
 export interface TripScore {
-  overall: number;
-  categories: {
-    budget: number;
-    weather: number;
-    activities: number;
-    timing: number;
-    diversity: number;
+  score: number;
+  dimensions: {
+    budgetEfficiency: number;
+    weatherSuitability: number;
+    scheduleRealism: number;
+    travelConvenience: number;
+    activityBalance: number;
+    preferenceAlignment: number;
   };
-  recommendations: string[];
+  weakAreas: string[];
 }
 
 // ===== Weather Types =====
-export interface DayWeather {
-  date: string;
-  condition: WeatherCondition;
-  temperature: {
-    high: number;
-    low: number;
-    unit: 'celsius' | 'fahrenheit';
-  };
-  humidity: number;
-  windSpeed: number;
-  precipitation: number;
-  advisory?: string;
-  icon: string;
-  impactsActivities: boolean;
+export interface WeatherSnapshot {
+  forecastDate?: string;
+  temperatureCelsius?: number;
+  feelsLikeCelsius?: number;
+  humidity?: number;
+  windSpeed?: number;
+  precipitationChance?: number;
+  weatherType?: string;
+  advisoryMessage?: string;
+  isOutdoorFriendly?: boolean;
+  source?: string;
 }
+
+// Legacy alias
+export type DayWeather = WeatherSnapshot;
 
 export type WeatherCondition =
   | 'sunny'
@@ -193,40 +212,64 @@ export type WeatherCondition =
   | 'clear';
 
 export interface WeatherReview {
-  tripId: string;
-  approved: boolean;
-  notes?: string;
+  affectedDay: number;
+  userDecision: 'accept_risk' | 'regenerate' | 'dismiss';
+}
+
+export interface RegenerateWeatherDayPayload {
+  affectedDay: number;
 }
 
 // ===== Hotel Types =====
-export interface Hotel {
-  id: string;
+export interface HotelRecommendation {
+  _id: string;
   name: string;
-  description: string;
-  rating: number;
-  reviewCount: number;
-  pricePerNight: number;
-  currency: string;
-  images: string[];
-  amenities: string[];
-  location: string;
-  coordinates?: { lat: number; lng: number };
-  stars: number;
-  bookingOptions: BookingOption[];
+  tier?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  nightlyRateEstimate?: number;
+  currency?: string;
+  rating?: number;
+  reviewCount?: number;
+  bookingOptions?: BookingOption[];
 }
 
+// Legacy alias
+export type Hotel = HotelRecommendation;
+
 export interface BookingOption {
-  id: string;
-  provider: string;
-  price: number;
-  currency: string;
-  roomType: string;
-  url: string;
-  cancellationPolicy: string;
-  breakfast: boolean;
+  providerName?: string;
+  providerType?: string;
+  bookingUrl?: string;
+  priceEstimate?: number;
+  currency?: string;
+  availabilityStatus?: string;
+}
+
+export interface DecisionCheckpoint {
+  checkpointType: string;
+  message: string;
+  triggeredAt?: string;
+  userDecision?: string;
+  affectedDay?: number;
 }
 
 // ===== AI Assistant Types =====
+export type OptimizationGoal =
+  | 'reduce cost'
+  | 'luxury upgrade'
+  | 'family friendly'
+  | 'less walking'
+  | 'food focused'
+  | 'fewer transitions';
+
+export type AlternativeReason =
+  | 'bad weather'
+  | 'attraction unavailable'
+  | 'user preference change'
+  | 'budget concern';
+
 export interface AssistantMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -237,9 +280,9 @@ export interface AssistantMessage {
 }
 
 export interface OptimizationResult {
-  suggestions: Suggestion[];
-  savingsEstimate: number;
-  scoreImprovement: number;
+  optimizationGoal: string;
+  suggestions: string[];
+  score: TripScore;
 }
 
 export interface Suggestion {

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Sparkles, AlertTriangle, ArrowLeftRight, BarChart3, Loader2, Zap, CheckCircle2, XCircle } from 'lucide-react';
+import { Bot, Sparkles, AlertTriangle, ArrowLeftRight, BarChart3, Loader2, Zap, CheckCircle2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAssistantStore } from '@/store/assistantStore';
 import { useAssistant } from '@/hooks/useAssistant';
@@ -9,20 +9,26 @@ import type { AssistantMessage } from '@/types';
 
 export default function Assistant() {
   const { trips } = useTrips();
-  const [selectedTripId, setSelectedTripId] = useState(trips[0]?.id || '');
+  const [selectedTripId, setSelectedTripId] = useState('');
   const { messages, isLoading: isAssistantLoading, clearMessages } = useAssistantStore();
   const { score, isScoreLoading, optimize, checkConflicts, getAlternatives, isOptimizing, isCheckingConflicts, isGettingAlternatives } = useAssistant(selectedTripId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
+    if (!selectedTripId && trips.length > 0) {
+      setSelectedTripId(trips[0].id ?? trips[0]._id);
+    }
+  }, [trips, selectedTripId]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const quickActions = [
-    { label: 'Optimize Trip', icon: Sparkles, action: optimize, loading: isOptimizing, color: 'text-accent-500 bg-accent-500/10' },
-    { label: 'Check Conflicts', icon: AlertTriangle, action: checkConflicts, loading: isCheckingConflicts, color: 'text-warning-600 bg-warning-50 dark:bg-warning-500/10' },
-    { label: 'Get Alternatives', icon: ArrowLeftRight, action: getAlternatives, loading: isGettingAlternatives, color: 'text-brand-500 bg-brand-500/10' },
+    { label: 'Optimize Trip', icon: Sparkles, action: () => optimize(), loading: isOptimizing, color: 'text-accent-500 bg-accent-500/10' },
+    { label: 'Check Conflicts', icon: AlertTriangle, action: () => checkConflicts(), loading: isCheckingConflicts, color: 'text-warning-600 bg-warning-50 dark:bg-warning-500/10' },
+    { label: 'Get Alternatives', icon: ArrowLeftRight, action: () => getAlternatives({ affectedDay: 1, reason: 'user preference change' }), loading: isGettingAlternatives, color: 'text-brand-500 bg-brand-500/10' },
   ];
 
   return (
@@ -40,10 +46,13 @@ export default function Assistant() {
               <p className="text-xs text-muted-foreground">Powered by Voyageur AI</p>
             </div>
           </div>
-          <select value={selectedTripId} onChange={(e) => { setSelectedTripId(e.target.value); clearMessages(); }}
-            className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs focus:outline-none">
+          <select
+            value={selectedTripId}
+            onChange={(e) => { setSelectedTripId(e.target.value); clearMessages(); }}
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/50 cursor-pointer min-w-[130px]"
+          >
             <option value="">Select trip...</option>
-            {trips.map((t) => <option key={t.id} value={t.id}>{t.destination}</option>)}
+            {trips.map((t) => { const tid = t.id ?? t._id; return <option key={tid} value={tid}>{t.destinationCity}</option>; })}
           </select>
         </div>
 
@@ -115,14 +124,14 @@ export default function Assistant() {
             <div className="space-y-4">
               <div className="flex items-center justify-center">
                 <div className="relative flex h-28 w-28 items-center justify-center rounded-full border-4 border-brand-500">
-                  <span className="text-3xl font-bold text-foreground">{score.overall}</span>
+                  <span className="text-3xl font-bold text-foreground">{score.score}</span>
                   <span className="absolute -bottom-2 rounded-full bg-brand-500 px-2 py-0.5 text-xs font-medium text-white">/100</span>
                 </div>
               </div>
-              {Object.entries(score.categories).map(([key, val]) => (
+              {Object.entries(score.dimensions ?? {}).map(([key, val]) => (
                 <div key={key}>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="capitalize text-muted-foreground">{key}</span>
+                    <span className="capitalize text-muted-foreground">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                     <span className="font-medium text-foreground">{val}%</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-muted">
@@ -130,13 +139,13 @@ export default function Assistant() {
                   </div>
                 </div>
               ))}
-              {score.recommendations?.length > 0 && (
+              {score.weakAreas?.length > 0 && (
                 <div className="mt-4 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">Recommendations</p>
-                  {score.recommendations.map((r, i) => (
+                  <p className="text-xs font-semibold text-muted-foreground">Areas to Improve</p>
+                  {score.weakAreas.map((r, i) => (
                     <div key={i} className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
                       <Zap className="mt-0.5 h-3 w-3 flex-shrink-0 text-accent-500" />
-                      {r}
+                      {r.replace(/([A-Z])/g, ' $1').trim()}
                     </div>
                   ))}
                 </div>
@@ -161,10 +170,10 @@ function MessageBubble({ message }: { message: AssistantMessage }) {
         <p className="text-sm">{message.content}</p>
         {message.type === 'optimization' && message.data && (
           <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
-            {((message.data as { suggestions?: Array<{ id: string; description: string; savings?: number }> }).suggestions || []).slice(0, 3).map((s) => (
-              <div key={s.id} className="flex items-start gap-2 rounded-lg bg-white/10 p-2 text-xs">
+            {((message.data as { suggestions?: string[] }).suggestions || []).map((s, i) => (
+              <div key={i} className="flex items-start gap-2 rounded-lg bg-white/10 p-2 text-xs">
                 <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0" />
-                <span>{s.description}{s.savings ? ` (Save $${s.savings})` : ''}</span>
+                <span>{s}</span>
               </div>
             ))}
           </div>

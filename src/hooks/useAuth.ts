@@ -1,18 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import type { LoginPayload, RegisterPayload } from '@/types';
 import { toast } from 'sonner';
 
 export function useAuth() {
-  const { setAuth, logout: storeLogout, setUser, setLoading } = useAuthStore();
+  const { setAuth, logout: storeLogout, setUser } = useAuthStore();
   const queryClient = useQueryClient();
+
+  const hasToken = !!localStorage.getItem('accessToken');
 
   const meQuery = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authApi.getMe,
     retry: false,
-    enabled: !!localStorage.getItem('accessToken'),
+    enabled: hasToken,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -22,7 +25,7 @@ export function useAuth() {
       setAuth(data.user, data.accessToken, data.refreshToken);
       queryClient.invalidateQueries({ queryKey: ['auth'] });
       toast.success('Welcome back!', {
-        description: `Signed in as ${data.user.name}`,
+        description: `Signed in as ${data.user.fullName}`,
       });
     },
     onError: (error: { message: string }) => {
@@ -57,14 +60,11 @@ export function useAuth() {
     },
   });
 
-  // Sync me query with store
-  if (meQuery.data && !meQuery.isLoading) {
-    setUser(meQuery.data);
-    setLoading(false);
-  }
-  if (meQuery.isError) {
-    setLoading(false);
-  }
+  useEffect(() => {
+    if (meQuery.data && !meQuery.isLoading) {
+      setUser(meQuery.data);
+    }
+  }, [meQuery.data, meQuery.isLoading, setUser]);
 
   return {
     meQuery,

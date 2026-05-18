@@ -71,11 +71,13 @@ api.interceptors.response.use(
           refreshToken,
         });
 
-        const newAccessToken = data.data?.accessToken || data.accessToken;
+        const inner = data.data ?? data;
+        const newAccessToken = inner.tokens?.accessToken ?? inner.accessToken;
         localStorage.setItem('accessToken', newAccessToken);
 
-        if (data.data?.refreshToken || data.refreshToken) {
-          localStorage.setItem('refreshToken', data.data?.refreshToken || data.refreshToken);
+        const newRefreshToken = inner.tokens?.refreshToken ?? inner.refreshToken;
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
         }
 
         processQueue(null, newAccessToken);

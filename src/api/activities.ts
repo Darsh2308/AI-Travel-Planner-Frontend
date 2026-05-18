@@ -1,16 +1,18 @@
 import api from './axios';
 import { API_ENDPOINTS } from '@/constants';
-import type { Activity } from '@/types';
+import type { Activity, BookingOption } from '@/types';
 
 export const activitiesApi = {
-  getBookingOptions: async (tripId: string, activityId: string) => {
+  getBookingOptions: async (tripId: string, activityId: string): Promise<BookingOption[]> => {
     const { data } = await api.get(API_ENDPOINTS.ACTIVITY_BOOKING(tripId, activityId));
-    return data.data || data;
+    const inner = data.data ?? data;
+    return inner.bookingOptions ?? inner;
   },
 
   createActivity: async (tripId: string, payload: Partial<Activity>): Promise<Activity> => {
     const { data } = await api.post(API_ENDPOINTS.TRIP_ACTIVITIES(tripId), payload);
-    return data.data || data;
+    const inner = data.data ?? data;
+    return inner.trip ?? inner;
   },
 
   updateActivity: async (
@@ -22,7 +24,8 @@ export const activitiesApi = {
       API_ENDPOINTS.TRIP_ACTIVITY(tripId, activityId),
       payload
     );
-    return data.data || data;
+    const inner = data.data ?? data;
+    return inner.trip ?? inner;
   },
 
   deleteActivity: async (tripId: string, activityId: string): Promise<void> => {

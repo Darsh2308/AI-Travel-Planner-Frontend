@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { assistantApi } from '@/api/assistant';
 import { useAssistantStore } from '@/store/assistantStore';
-import type { AssistantMessage } from '@/types';
+import type { AssistantMessage, OptimizationGoal, AlternativeReason } from '@/types';
 import { toast } from 'sonner';
 
 export function useAssistant(tripId: string) {
@@ -15,7 +15,8 @@ export function useAssistant(tripId: string) {
   });
 
   const optimizeMutation = useMutation({
-    mutationFn: () => assistantApi.optimizeTrip(tripId),
+    mutationFn: (optimizationGoal: OptimizationGoal = 'reduce cost') =>
+      assistantApi.optimizeTrip(tripId, optimizationGoal),
     onMutate: () => {
       setLoading(true);
       addMessage({
@@ -29,7 +30,7 @@ export function useAssistant(tripId: string) {
       const msg: AssistantMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Found ${data.suggestions.length} optimization suggestions that could save you $${data.savingsEstimate}!`,
+        content: `Found ${data.suggestions?.length ?? 0} optimization suggestions for your "${data.optimizationGoal}" goal!`,
         type: 'optimization',
         data: data as unknown as Record<string, unknown>,
         timestamp: new Date().toISOString(),
@@ -59,7 +60,7 @@ export function useAssistant(tripId: string) {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content:
-          data.conflicts.length === 0
+          !data.conflicts?.length
             ? 'No conflicts found! Your itinerary looks great.'
             : `Found ${data.conflicts.length} potential conflicts.`,
         type: 'conflict',
@@ -76,7 +77,13 @@ export function useAssistant(tripId: string) {
   });
 
   const alternativesMutation = useMutation({
-    mutationFn: () => assistantApi.recommendAlternatives(tripId),
+    mutationFn: ({
+      affectedDay,
+      reason,
+    }: {
+      affectedDay: number;
+      reason?: AlternativeReason;
+    }) => assistantApi.recommendAlternatives(tripId, affectedDay, reason),
     onMutate: () => {
       setLoading(true);
       addMessage({
@@ -90,7 +97,7 @@ export function useAssistant(tripId: string) {
       const msg: AssistantMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Here are ${data.alternatives.length} alternative suggestions for your trip.`,
+        content: `Here are ${data.alternatives?.length ?? 0} alternative suggestions for your trip.`,
         type: 'alternative',
         data: data as unknown as Record<string, unknown>,
         timestamp: new Date().toISOString(),
