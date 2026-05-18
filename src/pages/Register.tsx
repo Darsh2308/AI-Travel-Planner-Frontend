@@ -15,7 +15,7 @@ export default function Register() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { terms: false },
+    defaultValues: {},
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
@@ -82,23 +82,6 @@ export default function Register() {
           </div>
           {errors.confirmPassword && <p className="mt-1 text-xs text-danger-500">{errors.confirmPassword.message}</p>}
         </div>
-
-        {/* Terms checkbox — use htmlFor pattern to avoid nested interactive elements */}
-        <div className="flex items-start gap-3">
-          <input
-            id="terms"
-            type="checkbox"
-            {...register('terms')}
-            className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border accent-brand-500"
-          />
-          <label htmlFor="terms" className="cursor-pointer text-xs text-muted-foreground leading-relaxed">
-            I agree to the{' '}
-            <a href="#" onClick={(e) => e.stopPropagation()} className="text-brand-500 hover:underline">Terms of Service</a>
-            {' '}and{' '}
-            <a href="#" onClick={(e) => e.stopPropagation()} className="text-brand-500 hover:underline">Privacy Policy</a>
-          </label>
-        </div>
-        {errors.terms && <p className="text-xs text-danger-500">{errors.terms.message}</p>}
 
         <button type="submit" disabled={isRegisterLoading}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white transition-all hover:bg-brand-600 hover:shadow-lg hover:shadow-brand-500/25 disabled:opacity-60">
