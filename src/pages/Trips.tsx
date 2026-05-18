@@ -29,7 +29,7 @@ export default function Trips() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {trips.map((trip, i) => {
-            const daysUntil = getDaysUntil(trip.startDate);
+            const daysUntil = trip.startDate ? getDaysUntil(trip.startDate) : 0;
             return (
               <motion.div key={trip._id ?? trip.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="group relative rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-card-hover">
@@ -40,7 +40,7 @@ export default function Trips() {
                     <h3 className="text-lg font-bold text-white">{trip.title || trip.destinationCity}</h3>
                     <p className="text-sm text-white/80">{trip.destinationCountry}</p>
                   </div>
-                  <button onClick={(e) => { e.preventDefault(); deleteTrip(trip._id ?? trip.id); }}
+                  <button onClick={(e) => { e.preventDefault(); deleteTrip(trip._id ?? trip.id ?? ''); }}
                     className="absolute right-3 top-3 rounded-lg bg-black/30 p-1.5 text-white/70 opacity-0 backdrop-blur-sm transition-all hover:bg-danger-500 hover:text-white group-hover:opacity-100">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -48,7 +48,7 @@ export default function Trips() {
 
                 <Link to={`/trips/${trip._id ?? trip.id}`} className="block p-4">
                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDateRange(trip.startDate, trip.endDate)}</span>
+                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{trip.startDate && trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : '—'}</span>
                     <span className="flex items-center gap-1"><Wallet className="h-3 w-3" />{formatCurrency(trip.allocatedBudgetAmount ?? 0)}</span>
                   </div>
 

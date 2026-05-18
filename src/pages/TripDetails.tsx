@@ -87,7 +87,7 @@ export default function TripDetails() {
 
   if (isLoading || !trip) return <PageLoader />;
 
-  const duration = getTripDuration(trip.startDate, trip.endDate) || trip.totalDays;
+  const duration = (trip.startDate && trip.endDate ? getTripDuration(trip.startDate, trip.endDate) : null) ?? trip.totalDays;
   const totalEstimated = trip.estimatedCost?.total ?? 0;
   const allocated = trip.allocatedBudgetAmount ?? 0;
   const totalActivities = trip.itinerary?.reduce((acc, d) => acc + (d.activities?.length || 0), 0) ?? 0;
@@ -107,7 +107,7 @@ export default function TripDetails() {
               <h1 className="font-display text-3xl font-bold md:text-4xl">{trip.title || trip.destinationCity}</h1>
               <p className="mt-1 text-brand-200">{trip.destinationCity}{trip.destinationCountry ? `, ${trip.destinationCountry}` : ''}</p>
               <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-brand-200">
-                <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDateRange(trip.startDate, trip.endDate)}</span>
+                <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{trip.startDate && trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : '—'}</span>
                 <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" />{duration} days</span>
                 <span className="flex items-center gap-1.5"><Wallet className="h-4 w-4" />{formatCurrency(allocated)}</span>
               </div>

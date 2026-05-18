@@ -145,7 +145,7 @@ export default function Analytics() {
                 {trips.map((trip) => (
                   <tr key={trip._id ?? trip.id} className="border-b border-border/50">
                     <td className="py-3 font-medium text-foreground">{trip.destinationCity}{trip.destinationCountry ? `, ${trip.destinationCountry}` : ''}</td>
-                    <td className="py-3 text-muted-foreground">{formatDate(trip.startDate)}</td>
+                    <td className="py-3 text-muted-foreground">{trip.startDate ? formatDate(trip.startDate) : '—'}</td>
                     <td className="py-3 text-foreground">{formatCurrency(trip.allocatedBudgetAmount ?? 0)}</td>
                     <td className="py-3"><span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-xs font-medium text-brand-500">{trip.tripStatus}</span></td>
                   </tr>

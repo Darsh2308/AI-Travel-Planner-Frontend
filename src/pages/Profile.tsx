@@ -21,7 +21,7 @@ export default function Profile() {
     defaultValues: {
       name: user?.fullName || '',
       email: user?.email || '',
-      travelStyle: user?.preferences?.travelStyle || '',
+      travelStyle: user?.preferences?.travelStyle ?? '',
       dietaryPreferences: user?.preferences?.dietaryPreferences || [],
       activityLevel: 'moderate',
       interests: user?.preferences?.activityPreferences || [],

@@ -55,7 +55,7 @@ export const useUIStore = create<UIState>()(
 
       setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
 
-      openModal: (activeModal, modalData = null) =>
+      openModal: (activeModal, modalData?) =>
         set({ activeModal, modalData: modalData ?? null }),
 
       closeModal: () => set({ activeModal: null, modalData: null }),

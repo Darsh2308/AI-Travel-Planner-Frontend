@@ -16,8 +16,9 @@ export default function Assistant() {
   const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
-    if (!selectedTripId && trips.length > 0) {
-      setSelectedTripId(trips[0].id ?? trips[0]._id);
+    const first = trips[0];
+    if (!selectedTripId && first) {
+      setSelectedTripId(first.id ?? first._id ?? '');
     }
   }, [trips, selectedTripId]);
 
@@ -26,7 +27,7 @@ export default function Assistant() {
   }, [messages]);
 
   const quickActions = [
-    { label: 'Optimize Trip', icon: Sparkles, action: () => optimize(), loading: isOptimizing, color: 'text-accent-500 bg-accent-500/10' },
+    { label: 'Optimize Trip', icon: Sparkles, action: () => optimize('reduce cost'), loading: isOptimizing, color: 'text-accent-500 bg-accent-500/10' },
     { label: 'Check Conflicts', icon: AlertTriangle, action: () => checkConflicts(), loading: isCheckingConflicts, color: 'text-warning-600 bg-warning-50 dark:bg-warning-500/10' },
     { label: 'Get Alternatives', icon: ArrowLeftRight, action: () => getAlternatives({ affectedDay: 1, reason: 'user preference change' }), loading: isGettingAlternatives, color: 'text-brand-500 bg-brand-500/10' },
   ];

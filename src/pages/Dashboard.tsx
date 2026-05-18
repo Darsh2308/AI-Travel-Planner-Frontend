@@ -78,7 +78,7 @@ export default function Dashboard() {
   const budgetChartData = buildBudgetChartData(trips);
   const trendData = buildTrendData(trips);
 
-  const scoreValue = tripScore ? `${Math.round(tripScore.overall)}%` : trips.length > 0 ? '—' : 'N/A';
+  const scoreValue = tripScore ? `${Math.round(tripScore.score)}%` : trips.length > 0 ? '—' : 'N/A';
 
   const stats = [
     { label: 'Total Trips', value: trips.length || 0, icon: Map, color: 'text-brand-500', bg: 'bg-brand-500/10' },
@@ -183,7 +183,7 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {trips.slice(0, 4).map((trip) => {
-                const daysUntil = getDaysUntil(trip.startDate);
+                const daysUntil = trip.startDate ? getDaysUntil(trip.startDate) : 0;
                 return (
                   <Link key={trip._id ?? trip.id} to={`/trips/${trip._id ?? trip.id}`}
                     className="group flex items-center gap-4 rounded-xl border border-border/50 p-4 transition-all hover:border-brand-500/30 hover:bg-muted/50">
@@ -202,7 +202,7 @@ export default function Dashboard() {
                         </span>
                       </div>
                       <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDateRange(trip.startDate, trip.endDate)}</span>
+                        <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{trip.startDate && trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : '—'}</span>
                         {daysUntil > 0 && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{daysUntil}d away</span>}
                       </div>
                       <div className="mt-2 text-xs text-muted-foreground">
@@ -271,8 +271,8 @@ export default function Dashboard() {
                 if (scoredTrip) {
                   insights.push({
                     icon: TrendingUp,
-                    text: `Your ${scoredTrip.destinationCity} trip score is ${Math.round(tripScore.overall)}%${tripScore.recommendations?.[0] ? ` — ${tripScore.recommendations[0]}` : ''}`,
-                    type: tripScore.overall >= 75 ? 'success' : 'info',
+                    text: `Your ${scoredTrip.destinationCity} trip score is ${Math.round(tripScore.score)}%${tripScore.weakAreas?.[0] ? ` — ${tripScore.weakAreas[0]}` : ''}`,
+                    type: tripScore.score >= 75 ? 'success' : 'info',
                   });
                 }
               }
@@ -290,8 +290,8 @@ export default function Dashboard() {
               }
 
               // Upcoming trip reminder
-              if (insights.length === 0 && upcomingTrips.length > 0) {
-                const next = upcomingTrips[0];
+              const next = upcomingTrips[0];
+              if (insights.length === 0 && next) {
                 const days = next.startDate ? getDaysUntil(next.startDate) : null;
                 insights.push({
                   icon: Calendar,

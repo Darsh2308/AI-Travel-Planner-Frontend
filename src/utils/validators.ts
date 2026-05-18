@@ -37,7 +37,7 @@ export const tripStep2Schema = z.object({
 export const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email'),
-  travelStyle: z.string().optional(),
+  travelStyle: z.enum(['adventure', 'cultural', 'relaxation', 'family', 'business', 'backpacker', 'luxury', 'eco', '']).optional(),
   dietaryPreferences: z.array(z.string()).optional(),
   activityLevel: z.enum(['low', 'moderate', 'high']).optional(),
   interests: z.array(z.string()).optional(),
